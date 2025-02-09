@@ -12,7 +12,8 @@ from datetime import datetime
 app = Flask(__name__)
 CORS(app)
 
-GROQ_API_KEY =  "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"
+GROQ_API_KEY =  os.getenv("GROQ_API_KEY")
+
 client = Groq(api_key=GROQ_API_KEY)
 
 # Constants
