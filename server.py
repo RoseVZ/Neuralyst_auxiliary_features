@@ -1,0 +1,138 @@
+import os
+import re
+import json
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from groq import Groq
+from geopy.geocoders import Nominatim
+from io import BytesIO
+
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)
+
+GROQ_API_KEY =  "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"
+client = Groq(api_key=GROQ_API_KEY)
+
+# Constants
+MODEL_NAME = "llama-3.3-70b-versatile"
+WHISPER_MODEL = "whisper-large-v3-turbo"
+
+
+def get_coordinates(location_name):
+    """
+    Get latitude and longitude for a given location name using the Nominatim geocoder.
+    """
+    geolocator = Nominatim(user_agent="location_finder")
+    location = geolocator.geocode(location_name)
+    if location:
+        return {"latitude": location.latitude, "longitude": location.longitude}
+    return None
+
+
+def extract_date_time_location(response_text):
+    """
+    Extract Date, Time, and Location from the Groq response text using regex.
+    """
+    date_match = re.search(r"Date:\s*(.*)", response_text)
+    time_match = re.search(r"Time:\s*(.*)", response_text)
+    location_match = re.search(r"Location:\s*(.*)", response_text)
+
+    return {
+        "Date": date_match.group(1) if date_match else None,
+        "Time": time_match.group(1) if time_match else None,
+        "Location": location_match.group(1) if location_match else None
+    }
+
+
+def transcribe_audio_file(audio_data):
+    """
+    Transcribe audio file content using the Whisper model.
+    """
+    audio_buffer = BytesIO(audio_data)
+    file = ("audio.m4a", audio_buffer)
+
+    try:
+        transcription = client.audio.transcriptions.create(
+            file=file,
+            model=WHISPER_MODEL,
+            prompt="Specify context or spelling",
+            response_format="json",
+            language="en",
+            temperature=0.0
+        )
+        return transcription.text
+    except Exception as e:
+        return str(e)
+
+
+def extract_info_from_sentence(sentence):
+    """
+    Extract date, time, and location from the sentence using Groq.
+    """
+    try:
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[{"role": "user", "content": f"{sentence}. Give me the date time, location only like Date: , Time: , Location: "}],
+            temperature=0.1,
+            max_completion_tokens=160,
+            top_p=0.95,
+            stream=True
+        )
+
+        response_text = ""
+        for chunk in completion:
+            response_text += chunk.choices[0].delta.content or ""
+
+        return extract_date_time_location(response_text)
+    except Exception as e:
+        return {"error": f"Failed to extract information: {str(e)}"}
+
+
+@app.route('/extract_info_and_coordinates', methods=['POST'])
+def extract_info_and_coordinates():
+    """
+    Extracts date, time, location from the sentence and returns coordinates for the location.
+    """
+    data = request.get_json()
+    sentence = data.get('sentence')
+
+    if not sentence:
+        return jsonify({'error': 'Sentence is required'}), 400
+
+    # Extract date, time, and location
+    structured_data = extract_info_from_sentence(sentence)
+
+    location_name = structured_data.get("Location")
+    if location_name:
+        # Get coordinates for the location
+        coordinates = get_coordinates(location_name)
+        if coordinates:
+            structured_data["Coordinates"] = coordinates
+        else:
+            structured_data["Coordinates"] = {"error": "Location not found"}
+    else:
+        structured_data["Coordinates"] = {"error": "No location found in sentence"}
+
+    return jsonify(structured_data), 200
+
+
+@app.route("/transcribe", methods=["POST"])
+def transcribe_audio():
+    """
+    Accepts an audio file and returns the transcription text.
+    """
+    if "audio" not in request.files:
+        return jsonify({"error": "No audio file uploaded"}), 400
+
+    audio_file = request.files["audio"]
+    audio_data = audio_file.read()
+
+    transcription_text = transcribe_audio_file(audio_data)
+
+    return jsonify({"transcription": transcription_text})
+
+
+if __name__ == '__main__':
+    # Run the Flask app on port 5001
+    app.run(debug=True, port=5001)
