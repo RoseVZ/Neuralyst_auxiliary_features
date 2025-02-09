@@ -219,9 +219,10 @@ def algo():
         "content": f"""I have a list of tasks that have the following format, <task_id> : "task".  Can you help me get <task id>: prority_number by chronologically sorting them. The criterion for sorting are-if the task implies today, then consider it to be done today atleast 15 mins before the time mentioned. The actual time now is {current_time} if the task has a date, the current date should be compared to. The actual date is {current_date} and then the task is prioritized in accordance with others.
         Generic tasks like "Go to the gym" or "cook food" should be today at approprite times taking into consideration the current time. 
         The task list is as follows
-    The tasks are {task_string}
-    Just give a chronological sort and return in the form of <task_id>,<task_name>,<Priority><task time><endtime> dont return anything else The end time can be approximated by you. 
+    The tasks are {task_string} 
+    Just give a chronological sort and return in the form of <task_id>/<task_name>/<Priority>/<task time>/<endtime> separated by a slash dont return anything else The end time can be approximated by you. 
     prority 1 means it is the most important and now mean most priority, And please make sure the the task_ids are consistent with the input task_ids
+        DONT MAKE MISTAKES IN PRIORITIZING TAsk WITH NOW!!!!
         """
                     }
                 ],
@@ -239,7 +240,7 @@ def algo():
     # Split into lines and process each line
     tasks = []
     for line in priority.split("\n"):
-        task_id, task_name, priority_val, start_time, end_time = line.split(",")
+        task_id, task_name, priority_val, start_time, end_time = line.split("/")
         tasks.append({
             "task_id": task_id,
             "task_name": task_name,
