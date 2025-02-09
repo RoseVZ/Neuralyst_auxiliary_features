@@ -134,6 +134,7 @@ def transcribe_audio():
 
     return jsonify({"transcription": transcription_text})
 
+
 @app.route('/subtask', methods=['POST'])
 def subtask():
         data = request.json  # Get JSON data from the request
@@ -163,11 +164,14 @@ def subtask():
     Subtask: "Do you want to wear your running shoes?"
 
     Example 4:
-    Task: "Pack your lugguage"
-    Subtask: "Do you want to pack your clothes?""
+    Task: "So you wnt ot go somewhere"
+    Subtask: "Do you wanna go out?"
+    Example 5:
+    Task: "I nned to go to Columbia University in the evening"
+    Subtask: "Do you wanna leave the house""
     
 
-    Now, for this task: {task} Just state a subtask with no other words but like a polite question, do you want to ... but mention the main words that define the task?. 
+    Now, for this task: {task} Just state a subtask with no other words but like a polite question, do you want to ... ?. 
     """
                 }
             ],
