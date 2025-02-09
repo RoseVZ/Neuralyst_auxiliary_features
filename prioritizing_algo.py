@@ -54,8 +54,8 @@ def algo():
         Generic tasks like "Go to the gym" or "cook food" should be today at approprite times taking into consideration the current time. 
         The task list is as follows
     The tasks are {task_string}
-    Just give a chronological sort and return in the form of <task_id>,<Priority><task time><endtime> dont return anything else The end time can be approximated by you.
-
+    Just give a chronological sort and return in the form of <task_id>,<task_name>,<Priority><task time><endtime> dont return anything else The end time can be approximated by you. 
+    prority 1 means it is the most important and now mean most priority, And please make sure the the task_ids are consistent with the input task_ids
         """
                     }
                 ],
@@ -73,9 +73,10 @@ def algo():
     # Split into lines and process each line
     tasks = []
     for line in priority.split("\n"):
-        task_id, priority_val, start_time, end_time = line.split(",")
+        task_id, task_name, priority_val, start_time, end_time = line.split(",")
         tasks.append({
             "task_id": int(task_id),
+            "task_name": task_name,
             "priority": int(priority_val),
             "start_time": start_time,
             "end_time": end_time
